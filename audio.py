@@ -1,3 +1,4 @@
+###  MODIFIED DERUR  ###
 import librosa
 import librosa.filters
 import numpy as np
@@ -135,3 +136,4 @@ def _denormalize(D):
         return (((D + hp.max_abs_value) * -hp.min_level_db / (2 * hp.max_abs_value)) + hp.min_level_db)
     else:
         return ((D * -hp.min_level_db / hp.max_abs_value) + hp.min_level_db)
+###  MODIFIED DERUR  ###
