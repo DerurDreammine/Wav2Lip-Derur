@@ -2,13 +2,13 @@
 
 ## Fork by [**Derur**](https://boosty.to/dreammine)
 Fork add and fix:  
-&nbsp; --device setting;  
-&nbsp; --face_model setting;  
-&nbsp; no trash and nothing extra;  
-&nbsp; module mod (start like `python -m modules.Wav2Lip.inference -h`);  
-&nbsp; fix the error if in files path is space;  
-&nbsp; works with newer Python and Requirements;  
-&nbsp; no train because I'm lazy.  
+&nbsp;&nbsp;&nbsp; --device setting;  
+&nbsp;&nbsp;&nbsp; --face_model setting;  
+&nbsp;&nbsp;&nbsp; no trash and nothing extra;  
+&nbsp;&nbsp;&nbsp; module mod (start like `python -m modules.Wav2Lip.inference -h`);  
+&nbsp;&nbsp;&nbsp; fix the error if in files path is space;  
+&nbsp;&nbsp;&nbsp; works with newer Python and Requirements;  
+&nbsp;&nbsp;&nbsp; no train because I'm lazy.  
 &nbsp; 
    
 This code is part of the paper: _A Lip Sync Expert Is All You Need for Speech to Lip Generation In the Wild_ published at ACM Multimedia 2020. 
