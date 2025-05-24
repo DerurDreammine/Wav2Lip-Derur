@@ -29,8 +29,8 @@ parser.add_argument('--face', type=str,
                     help='Filepath of video/image that contains faces to use', required=True)
 parser.add_argument('--audio', type=str, 
                     help='Filepath of video/audio file to use as raw audio source', required=True)
-parser.add_argument('--outfile', type=str, help='Video path to save result. See default for an e.g.', 
-                                default='results/result_voice.mp4')
+parser.add_argument('--outfile', type=str, help='Video path to save result.', 
+                                required=True)
 
 parser.add_argument('--static', type=bool, 
                     help='If True, then use only first video frame for inference', default=False)
@@ -187,9 +187,7 @@ def load_model(path):
 def main():
     global script_dir, device
     args.img_size = 96
-    
     os.makedirs(f"{script_dir}/temp", exist_ok=True)
-    os.makedirs(f"{script_dir}/results", exist_ok=True)
 
     if os.path.isfile(args.face) and args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
         args.static = True
