@@ -1,3 +1,6 @@
+###  MODIFIED DERUR  ###
+# python -m modules.lipsync.Wav2Lip.inference -h
+
 import argparse
 import math
 import os
@@ -9,17 +12,19 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-import audio
+#import audio
+from . import audio
 # from face_detect import face_rect
-from models import Wav2Lip
+#from models import Wav2Lip
+from .models import Wav2Lip
 
 from batch_face import RetinaFace
 from time import time
 
-parser = argparse.ArgumentParser(description='Inference code to lip-sync videos in the wild using Wav2Lip models')
+parser = argparse.ArgumentParser(description='!MODIFIED DERUR! Inference code to lip-sync videos in the wild using Wav2Lip models !MODIFIED DERUR!')
 
 parser.add_argument('--checkpoint_path', type=str, 
-                    help='Name of saved checkpoint to load weights from', required=True)
+                    help='Name / Path of saved wav2lip checkpoint to load weights from', required=True)
 
 parser.add_argument('--face', type=str, 
                     help='Filepath of video/image that contains faces to use', required=True)
@@ -58,6 +63,10 @@ parser.add_argument('--rotate', default=False, action='store_true',
 
 parser.add_argument('--nosmooth', default=False, action='store_true',
                     help='Prevent smoothing face detections over a short temporal window')
+parser.add_argument('--device', type=str, help='Device cuda or cpu', 
+                                default=None)
+parser.add_argument('--face_model', type=str, help='Face detector model mobilenet or resnet50', 
+                                default="mobilenet")
 
 
 def get_smoothened_boxes(boxes, T):
@@ -70,6 +79,7 @@ def get_smoothened_boxes(boxes, T):
     return boxes
 
 def face_detect(images):
+    global script_dir
     results = []
     pady1, pady2, padx1, padx2 = args.pads
 
@@ -77,7 +87,8 @@ def face_detect(images):
 
     for image, rect in zip(images, face_rect(images)):
         if rect is None:
-            cv2.imwrite('temp/faulty_frame.jpg', image) # check this frame where the face was not detected.
+            #cv2.imwrite('temp/faulty_frame.jpg', image)
+            cv2.imwrite(f'{script_dir}/temp/faulty_frame.jpg', image) # check this frame where the face was not detected.
             raise ValueError('Face not detected! Ensure the video contains a face in all the frames.')
 
         y1 = max(0, rect[1] - pady1)
@@ -145,8 +156,10 @@ def datagen(frames, mels):
         yield img_batch, mel_batch, frame_batch, coords_batch
 
 mel_step_size = 16
+script_dir = os.path.dirname(os.path.abspath(__file__))
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print('Using {} for inference.'.format(device))
+#print(device)
+#print('Using {} for inference.'.format(device))
 
 def _load(checkpoint_path):
     if device == 'cuda':
@@ -170,7 +183,11 @@ def load_model(path):
     return model.eval()
 
 def main():
+    global script_dir
     args.img_size = 96
+    
+    os.makedirs(f"{script_dir}/temp", exist_ok=True)
+    os.makedirs(f"{script_dir}/results", exist_ok=True)
 
     if os.path.isfile(args.face) and args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
         args.static = True
@@ -217,12 +234,9 @@ def main():
         print('Extracting raw audio...')
         # command = 'ffmpeg -y -i {} -strict -2 {}'.format(args.audio, 'temp/temp.wav')
         # subprocess.call(command, shell=True)
-        subprocess.check_call([
-            "ffmpeg", "-y",
-            "-i", args.audio,
-            "temp/temp.wav",
-        ])
-        args.audio = 'temp/temp.wav'
+        subprocess.check_call(f"ffmpeg -y -i \"{args.audio}\" \"{script_dir}/temp/temp.wav\"")#"temp/temp.wav"
+        #args.audio = 'temp/temp.wav'
+        args.audio = f"{script_dir}/temp/temp.wav"
 
     wav = audio.load_wav(args.audio, 16000)
     mel = audio.melspectrogram(wav)
@@ -255,7 +269,8 @@ def main():
                                             total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
         if i == 0:
             frame_h, frame_w = full_frames[0].shape[:-1]
-            out = cv2.VideoWriter('temp/result.avi',
+            #out = cv2.VideoWriter('temp/result.avi',
+            out = cv2.VideoWriter(f'{script_dir}/temp/result.avi',
                                     cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_w, frame_h))
 
         img_batch = torch.FloatTensor(np.transpose(img_batch, (0, 3, 1, 2))).to(device)
@@ -276,34 +291,51 @@ def main():
     out.release()
 
     print("wav2lip prediction time:", time() - s)
-
-    subprocess.check_call([
+    
+    """subprocess.check_call([
         "ffmpeg", "-y",
         # "-vsync", "0", "-hwaccel", "cuda", "-hwaccel_output_format", "cuda",
         "-i", "temp/result.avi",
         "-i", args.audio,
         # "-c:v", "h264_nvenc",
         args.outfile,
-    ])
+    ])"""
+    subprocess.check_call(f"ffmpeg -y -i \"{script_dir}/temp/result.avi\" -i \"{args.audio}\" \"{args.outfile}\"")
+    import shutil
+    if os.path.exists(f"{script_dir}/temp"):
+        shutil.rmtree(f"{script_dir}/temp")
 
 model = detector = detector_model = None
 
 def do_load(checkpoint_path):
-    global model, detector, detector_model
+    #global model, detector, detector_model
+    global model, detector, detector_model, script_dir, device, args
 
     model = load_model(checkpoint_path)
+    
+    if (args.face_model.lower=="resnet50"): model_path=f"{script_dir}/checkpoints/resnet50.pth"; network="resnet50"
+    else: model_path=f"{script_dir}/checkpoints/mobilenet.pth"; network="mobilenet"
 
-    # SFDDetector.load_model(device)
-    # detector = RetinaFace(gpu_id=0, model_path="checkpoints/mobilenet.pth", network="mobilenet")
-    # detector = RetinaFace(gpu_id=0, model_path="checkpoints/resnet50.pth", network="resnet50")
-    if torch.cuda.is_available():
-        detector = RetinaFace(gpu_id=0, model_path="checkpoints/mobilenet.pth", network="mobilenet")
+    if device=="cuda":
+        detector = RetinaFace(gpu_id=0, model_path=model_path, network=network)
     else:
-        detector = RetinaFace( model_path="checkpoints/mobilenet.pth", network="mobilenet")
+        detector = RetinaFace(model_path=model_path, network=network)
   
     detector_model = detector.model
-
     print("Models loaded")
+"""
+    # detector = RetinaFace(gpu_id=0, model_path="checkpoints/mobilenet.pth", network="mobilenet")
+    # detector = RetinaFace(gpu_id=0, model_path="checkpoints/resnet50.pth", network="resnet50")
+    #if torch.cuda.is_available():
+    if device=="cuda":
+        detector = RetinaFace(gpu_id=0, model_path="checkpoints/mobilenet.pth", network="mobilenet")
+    else:
+        detector = RetinaFace(model_path="checkpoints/mobilenet.pth", network="mobilenet")
+
+    detector_model = detector.model
+    print("Models loaded")
+  """
+
 
 
 face_batch_size = 64 * 8
@@ -323,5 +355,10 @@ def face_rect(images):
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    if (args.device.lower()=="cuda") or (args.device.lower()=="cpu"):
+        if (args.device.lower()!="cuda") and (device!="cpu"):  device = args.device
+    print('Using {} for inference.'.format(device))
     do_load(args.checkpoint_path)
     main()
+
+###  MODIFIED DERUR  ###

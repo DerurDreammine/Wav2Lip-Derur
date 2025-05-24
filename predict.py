@@ -5,7 +5,8 @@ import subprocess
 
 from cog import BasePredictor, Input, Path
 
-import inference
+#import inference
+from . import inference
 
 from time import time
 

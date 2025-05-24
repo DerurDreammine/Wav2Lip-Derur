@@ -43,15 +43,14 @@ Prerequisites
 - `Python 3.10.15 ... 3.12` 
 - ffmpeg: `sudo apt-get install ffmpeg`
 - Install necessary packages using `pip install -r requirements.txt`.
-- Face detection [pre-trained model](https://www.adrianbulat.com/downloads/python-fan/s3fd-619a316812.pth) should be downloaded to `face_detection/detection/sfd/s3fd.pth`. Alternative [link](https://iiitaphyd-my.sharepoint.com/:u:/g/personal/prajwal_k_research_iiit_ac_in/EZsy6qWuivtDnANIG73iHjIBjMSoojcIV0NULXV-yiuiIg?e=qTasa8) if the above does not work.
-- Add [mobilenet.pth](https://github.com/justinjohn0306/Wav2Lip/releases/download/models/mobilenet.pth) to checkpoints folder once installed  along with one of the weights files below.
+- Face detection add [mobilenet.pth](https://github.com/justinjohn0306/Wav2Lip/releases/download/models/mobilenet.pth) or [resnet50.pth](https://github.com/justinjohn0306/Wav2Lip/releases/download/models/resnet50.pth) to ./checkpoints/ folder once installed  along with one of the weights files below.
 
 Getting the weights
 ----------
 | Model  | Description |  Link to the model | 
 | :-------------: | :---------------: | :---------------: |
-| Wav2Lip  | Highly accurate lip-sync | [Link](None)  |
-| Wav2Lip + GAN  | Slightly inferior lip-sync, but better visual quality | [Link](None) |
+| Wav2Lip  | Highly accurate lip-sync | [Link](https://github.com/justinjohn0306/Wav2Lip/releases/download/models/wav2lip.pth)  |
+| Wav2Lip + GAN  | Slightly inferior lip-sync, but better visual quality | [Link](https://github.com/justinjohn0306/Wav2Lip/releases/download/models/wav2lip_gan.pth) |
 | Expert Discriminator  | Weights of the expert discriminator | [Link](https://iiitaphyd-my.sharepoint.com/:u:/g/personal/radrabha_m_research_iiit_ac_in/EQRvmiZg-HRAjvI6zqN9eTEBP74KefynCwPWVmF57l-AYA?e=ZRPHKP) |
 | Visual Quality Discriminator  | Weights of the visual disc trained in a GAN setup | [Link](https://iiitaphyd-my.sharepoint.com/:u:/g/personal/radrabha_m_research_iiit_ac_in/EQVqH88dTm1HjlK11eNba5gBbn15WMS0B0EZbDBttqrqkg?e=ic0ljo) |
 
