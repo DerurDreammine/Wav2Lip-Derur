@@ -14,7 +14,6 @@ from tqdm import tqdm
 
 #import audio
 from . import audio
-# from face_detect import face_rect
 #from models import Wav2Lip
 from .models import Wav2Lip
 
@@ -24,7 +23,7 @@ from time import time
 parser = argparse.ArgumentParser(description='!MODIFIED DERUR! Inference code to lip-sync videos in the wild using Wav2Lip models !MODIFIED DERUR!')
 
 parser.add_argument('--checkpoint_path', type=str, 
-                    help='Name / Path of saved wav2lip checkpoint to load weights from', required=True)
+                    help='Path of saved wav2lip checkpoint to load weights from', required=True)
 
 parser.add_argument('--face', type=str, 
                     help='Filepath of video/image that contains faces to use', required=True)
@@ -87,7 +86,6 @@ def face_detect(images):
 
     for image, rect in zip(images, face_rect(images)):
         if rect is None:
-            #cv2.imwrite('temp/faulty_frame.jpg', image)
             cv2.imwrite(f'{script_dir}/temp/faulty_frame.jpg', image) # check this frame where the face was not detected.
             raise ValueError('Face not detected! Ensure the video contains a face in all the frames.')
 
@@ -158,10 +156,14 @@ def datagen(frames, mels):
 mel_step_size = 16
 script_dir = os.path.dirname(os.path.abspath(__file__))
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-#print(device)
-#print('Using {} for inference.'.format(device))
 
 def _load(checkpoint_path):
+    if not os.path.exists(checkpoint_path):
+        modified_checkpoint_path = checkpoint_path.replace('.', '')
+        if os.path.exists(f"{script_dir}/{checkpoint_path}"): checkpoint_path=f"{script_dir}/{checkpoint_path}"
+        elif os.path.exists(f"{script_dir}{checkpoint_path}"): checkpoint_path=f"{script_dir}{checkpoint_path}"
+        elif os.path.exists(f"{script_dir}{modified_checkpoint_path}"): checkpoint_path=f"{script_dir}{modified_checkpoint_path}"
+    
     if device == 'cuda':
         checkpoint = torch.load(checkpoint_path)
     else:
@@ -183,7 +185,7 @@ def load_model(path):
     return model.eval()
 
 def main():
-    global script_dir
+    global script_dir, device
     args.img_size = 96
     
     os.makedirs(f"{script_dir}/temp", exist_ok=True)
@@ -235,7 +237,6 @@ def main():
         # command = 'ffmpeg -y -i {} -strict -2 {}'.format(args.audio, 'temp/temp.wav')
         # subprocess.call(command, shell=True)
         subprocess.check_call(f"ffmpeg -y -i \"{args.audio}\" \"{script_dir}/temp/temp.wav\"")#"temp/temp.wav"
-        #args.audio = 'temp/temp.wav'
         args.audio = f"{script_dir}/temp/temp.wav"
 
     wav = audio.load_wav(args.audio, 16000)
@@ -269,7 +270,6 @@ def main():
                                             total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
         if i == 0:
             frame_h, frame_w = full_frames[0].shape[:-1]
-            #out = cv2.VideoWriter('temp/result.avi',
             out = cv2.VideoWriter(f'{script_dir}/temp/result.avi',
                                     cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_w, frame_h))
 
@@ -292,15 +292,10 @@ def main():
 
     print("wav2lip prediction time:", time() - s)
     
-    """subprocess.check_call([
-        "ffmpeg", "-y",
-        # "-vsync", "0", "-hwaccel", "cuda", "-hwaccel_output_format", "cuda",
-        "-i", "temp/result.avi",
-        "-i", args.audio,
-        # "-c:v", "h264_nvenc",
-        args.outfile,
-    ])"""
-    subprocess.check_call(f"ffmpeg -y -i \"{script_dir}/temp/result.avi\" -i \"{args.audio}\" \"{args.outfile}\"")
+    if device=="cuda":
+        subprocess.check_call(f"ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda -i \"{script_dir}/temp/result.avi\" -i \"{args.audio}\" -c:v h264_nvenc \"{args.outfile}\"")
+    else:
+        subprocess.check_call(f"ffmpeg -y -i \"{script_dir}/temp/result.avi\" -i \"{args.audio}\" \"{args.outfile}\"")
     import shutil
     if os.path.exists(f"{script_dir}/temp"):
         shutil.rmtree(f"{script_dir}/temp")
@@ -308,7 +303,6 @@ def main():
 model = detector = detector_model = None
 
 def do_load(checkpoint_path):
-    #global model, detector, detector_model
     global model, detector, detector_model, script_dir, device, args
 
     model = load_model(checkpoint_path)
@@ -323,18 +317,6 @@ def do_load(checkpoint_path):
   
     detector_model = detector.model
     print("Models loaded")
-"""
-    # detector = RetinaFace(gpu_id=0, model_path="checkpoints/mobilenet.pth", network="mobilenet")
-    # detector = RetinaFace(gpu_id=0, model_path="checkpoints/resnet50.pth", network="resnet50")
-    #if torch.cuda.is_available():
-    if device=="cuda":
-        detector = RetinaFace(gpu_id=0, model_path="checkpoints/mobilenet.pth", network="mobilenet")
-    else:
-        detector = RetinaFace(model_path="checkpoints/mobilenet.pth", network="mobilenet")
-
-    detector_model = detector.model
-    print("Models loaded")
-  """
 
 
 
@@ -356,7 +338,8 @@ def face_rect(images):
 if __name__ == '__main__':
     args = parser.parse_args()
     if (args.device.lower()=="cuda") or (args.device.lower()=="cpu"):
-        if (args.device.lower()!="cuda") and (device!="cpu"):  device = args.device
+        if (args.device.lower()!="cuda") and (device!="cpu"):  
+            if (args.device.lower()=="cuda") or (args.device.lower()=="cpu"): device = args.device
     print('Using {} for inference.'.format(device))
     do_load(args.checkpoint_path)
     main()
