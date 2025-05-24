@@ -6,7 +6,7 @@ Fork add and fix:
 &nbsp;&nbsp;&nbsp; --face_model setting;  
 &nbsp;&nbsp;&nbsp; no trash and nothing extra;  
 &nbsp;&nbsp;&nbsp; module mod (start like `python -m modules.Wav2Lip.inference -h`);  
-&nbsp;&nbsp;&nbsp; fix the error if in files path is space;  
+&nbsp;&nbsp;&nbsp; fix the error if in files paths is space;  
 &nbsp;&nbsp;&nbsp; works with newer Python and Requirements;  
 &nbsp;&nbsp;&nbsp; no train because I'm lazy.  
 &nbsp; 
